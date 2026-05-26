@@ -77,7 +77,7 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build native addon (--target ${{ matrix.target }})
         run: npx napi build --platform --release --target ${{ matrix.target }}
