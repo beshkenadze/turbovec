@@ -1,0 +1,94 @@
+name: Node CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "turbovec-node/**"
+      - "turbovec/**"
+      - ".cargo/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/node-ci.yml"
+  pull_request:
+    paths:
+      - "turbovec-node/**"
+      - "turbovec/**"
+      - ".cargo/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/node-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: node-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: macos-14
+            target: aarch64-apple-darwin
+            smoke: true
+          # Cross-compiled from the arm64 runner via the universal macOS SDK
+          # (Accelerate is a system framework available for both arches). The
+          # arm host cannot execute an x86_64 binary, so no native smoke test —
+          # a successful build + artifact is the verification here.
+          - host: macos-14
+            target: x86_64-apple-darwin
+            smoke: false
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            smoke: true
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            smoke: true
+    defaults:
+      run:
+        working-directory: turbovec-node
+    steps:
+      - uses: actions/checkout@v4
+
+      # The core `turbovec` crate links a system BLAS on Linux
+      # (blas-src/openblas-src with the "system" feature); macOS uses the
+      # Accelerate framework and needs nothing installed.
+      - name: Install OpenBLAS (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev pkg-config
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: turbovec-node/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build native addon (--target ${{ matrix.target }})
+        run: npx napi build --platform --release --target ${{ matrix.target }}
+
+      - name: Smoke test (native round-trip)
+        if: ${{ matrix.smoke }}
+        run: npm test
+
+      - name: Upload binding artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.target }}
+          path: turbovec-node/*.node
+          if-no-files-found: error

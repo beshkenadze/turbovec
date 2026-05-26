@@ -1,0 +1,51 @@
+{
+  "name": "turbovec",
+  "version": "0.5.3",
+  "description": "Fast vector quantization with 2-4 bit compression and SIMD search — native Node bindings",
+  "license": "MIT",
+  "author": "Ryan Codrai",
+  "homepage": "https://github.com/RyanCodrai/turbovec",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RyanCodrai/turbovec.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RyanCodrai/turbovec/issues"
+  },
+  "keywords": [
+    "vector-search",
+    "quantization",
+    "nearest-neighbor",
+    "ann",
+    "simd",
+    "rag",
+    "embeddings"
+  ],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "napi": {
+    "binaryName": "turbovec",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu"
+    ]
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "test": "node examples/smoke.mjs"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.6.2"
+  }
+}

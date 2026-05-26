@@ -1,5 +1,5 @@
 [workspace]
-members = ["turbovec", "turbovec-python"]
+members = ["turbovec", "turbovec-python", "turbovec-node"]
 resolver = "2"
 
 [profile.release]

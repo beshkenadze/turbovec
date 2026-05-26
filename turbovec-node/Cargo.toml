@@ -1,0 +1,25 @@
+[package]
+name = "turbovec-node"
+version = "0.5.3"
+edition = "2021"
+rust-version = "1.80"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+turbovec-core = { package = "turbovec", path = "../turbovec" }
+# `napi8` is cumulative (pulls in napi6) and enables BigInt, which backs
+# BigInt64Array (i64 search indices) and BigUint64Array (u64 external ids).
+# Defaults (napi4 + dyn-symbols) are kept — dyn-symbols is required for the
+# Node-side dynamic symbol resolution.
+napi = { version = "3", features = ["napi8"] }
+napi-derive = "3"
+
+[build-dependencies]
+napi-build = "2"
+
+# NOTE: [profile.*] intentionally omitted — Cargo only honours profiles at the
+# workspace root, which already sets `lto = true`, `codegen-units = 1`,
+# `opt-level = 3`. This cdylib inherits them, matching the Python extension.
