@@ -1,16 +1,18 @@
 fn main() {
     napi_build::setup();
 
-    // openblas-src links libopenblas.a, but a cdylib tolerates undefined
-    // symbols, so the linker leaves the archive's references unresolved rather
-    // than pulling members in (dlopen then fails: first `cblas_sgemm`, then
-    // `pthread_atfork`). Re-link the static archive after the referencing
-    // objects to pull its members, then link libpthread — OpenBLAS's threading
-    // runtime, which openblas-src does not add to its extra libs. Order matters:
-    // pthread comes after the archive that references it. macOS uses Accelerate;
-    // this is Linux-only.
+    // Static OpenBLAS needs help linking into a cdylib (which tolerates
+    // undefined symbols and so won't pull archive members on its own):
+    //  - re-link libopenblas.a after the referencing objects so cblas_sgemm and
+    //    friends are pulled from the archive;
+    //  - link libpthread for OpenBLAS's threading runtime;
+    //  - force `pthread_atfork`, which on aarch64 lives ONLY in libc_nonshared.a
+    //    (x86_64 also exports it dynamically from libc.so.6, which is why x64
+    //    linked fine); without -u it stays undefined and dlopen fails on arm64.
+    // macOS uses Accelerate; this is Linux-only.
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux") {
         println!("cargo:rustc-link-arg=-l:libopenblas.a");
         println!("cargo:rustc-link-arg=-lpthread");
+        println!("cargo:rustc-link-arg=-Wl,-u,pthread_atfork");
     }
 }
