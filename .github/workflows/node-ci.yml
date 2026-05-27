@@ -48,18 +48,20 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             smoke: true
+            openblas_target: HASWELL
           - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             smoke: true
+            openblas_target: ARMV8
     defaults:
       run:
         working-directory: turbovec-node
     steps:
       - uses: actions/checkout@v4
 
-      # The core `turbovec` crate links a system BLAS on Linux
-      # (blas-src/openblas-src with the "system" feature); macOS uses the
-      # Accelerate framework and needs nothing installed.
+      # The Node addon builds OpenBLAS from source and links it statically on
+      # Linux (openblas-static feature), which needs a C/Fortran toolchain.
+      # macOS uses the Accelerate framework and needs nothing installed.
       - name: Install build deps (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y build-essential gfortran
@@ -80,6 +82,12 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Build native addon (--target ${{ matrix.target }})
+        env:
+          # Pin OpenBLAS's source build to a portable baseline ISA so it doesn't
+          # bake in the CI runner's CPU (e.g. AVX-512/SKYLAKEX) and then SIGILL on
+          # older-but-supported CPUs. HASWELL = AVX2/FMA (the crate's x86-64-v3
+          # floor); ARMV8 = generic arm64. Empty on macOS (Accelerate, no openblas-src).
+          OPENBLAS_TARGET: ${{ matrix.openblas_target }}
         run: npx napi build --platform --release --target ${{ matrix.target }}
 
       - name: Verify static OpenBLAS (Linux)
