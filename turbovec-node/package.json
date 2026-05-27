@@ -1,16 +1,16 @@
 {
-  "name": "turbovec",
-  "version": "0.5.3",
+  "name": "@beshkenadze/turbovec",
+  "version": "0.1.0",
   "description": "Fast vector quantization with 2-4 bit compression and SIMD search — native Node bindings",
   "license": "MIT",
   "author": "Ryan Codrai",
-  "homepage": "https://github.com/RyanCodrai/turbovec",
+  "homepage": "https://github.com/beshkenadze/turbovec",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RyanCodrai/turbovec.git"
+    "url": "git+https://github.com/beshkenadze/turbovec.git"
   },
   "bugs": {
-    "url": "https://github.com/RyanCodrai/turbovec/issues"
+    "url": "https://github.com/beshkenadze/turbovec/issues"
   },
   "keywords": [
     "vector-search",
@@ -25,11 +25,14 @@
   "types": "index.d.ts",
   "files": [
     "index.js",
-    "index.d.ts",
-    "*.node"
+    "index.d.ts"
   ],
   "engines": {
     "node": ">=18"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "napi": {
     "binaryName": "turbovec",
@@ -43,7 +46,11 @@
   "scripts": {
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "test": "node examples/smoke.mjs"
+    "test": "node examples/smoke.mjs",
+    "create-npm-dirs": "napi create-npm-dirs",
+    "artifacts": "napi artifacts",
+    "prepublishOnly": "napi prepublish --no-gh-release -t npm",
+    "version": "napi version"
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.6.2"
