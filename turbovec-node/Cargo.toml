@@ -9,7 +9,11 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-turbovec-core = { package = "turbovec", path = "../turbovec" }
+# default-features=false drops the core's openblas-system (dynamic) default;
+# openblas-static builds OpenBLAS from source and links it statically so the
+# published .node has no libopenblas runtime dependency on Linux. On macOS the
+# core uses Accelerate and openblas-static is a no-op.
+turbovec-core = { package = "turbovec", path = "../turbovec", default-features = false, features = ["openblas-static"] }
 # `napi8` is cumulative (pulls in napi6) and enables BigInt, which backs
 # BigInt64Array (i64 search indices) and BigUint64Array (u64 external ids).
 # Defaults (napi4 + dyn-symbols) are kept — dyn-symbols is required for the

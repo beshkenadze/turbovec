@@ -11,6 +11,20 @@ readme = "../README.md"
 keywords = ["vector-search", "quantization", "nearest-neighbor", "ann", "simd"]
 categories = ["algorithms", "science", "compression"]
 
+[features]
+# OpenBLAS linkage on Linux. macOS uses Accelerate, where the openblas-src dep
+# is absent, so both features below are no-ops there.
+#
+# Default = dynamic link against the system OpenBLAS: unchanged behavior for the
+# Rust crate and the Python wheels.
+default = ["openblas-system"]
+openblas-system = ["dep:openblas-src", "openblas-src/system"]
+# Build OpenBLAS from source and link it statically (no libopenblas runtime
+# dependency). Enabled by the Node addon via default-features=false. Relies on a
+# package-scoped build: a whole-workspace `cargo build` unifies this with
+# openblas-system and the system (dynamic) path would win.
+openblas-static = ["dep:openblas-src", "openblas-src/static", "openblas-src/cblas"]
+
 [dependencies]
 ndarray = "0.17"
 rayon = "1.10"
@@ -28,5 +42,4 @@ blas-src = { version = "0.10", features = ["accelerate"] }
 [target.'cfg(target_os = "linux")'.dependencies]
 ndarray = { version = "0.17", features = ["blas"] }
 blas-src = { version = "0.10", features = ["openblas"] }
-openblas-src = { version = "0.10", default-features = false, features = ["system"] }
-
+openblas-src = { version = "0.10", default-features = false, optional = true }

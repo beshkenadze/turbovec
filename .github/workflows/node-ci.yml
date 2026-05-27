@@ -60,9 +60,9 @@ jobs:
       # The core `turbovec` crate links a system BLAS on Linux
       # (blas-src/openblas-src with the "system" feature); macOS uses the
       # Accelerate framework and needs nothing installed.
-      - name: Install OpenBLAS (Linux)
+      - name: Install build deps (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev pkg-config
+        run: sudo apt-get update && sudo apt-get install -y build-essential gfortran
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -81,6 +81,17 @@ jobs:
 
       - name: Build native addon (--target ${{ matrix.target }})
         run: npx napi build --platform --release --target ${{ matrix.target }}
+
+      - name: Verify static OpenBLAS (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          f=$(ls turbovec.*.node)
+          echo "ldd $f:"
+          ldd "$f" || true
+          if ldd "$f" | grep -qi openblas; then
+            echo "ERROR: libopenblas is still dynamically linked into $f"; exit 1
+          fi
+          echo "OK: no dynamic libopenblas in $f"
 
       - name: Smoke test (native round-trip)
         if: ${{ matrix.smoke }}
@@ -111,9 +122,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OpenBLAS (Linux)
+      - name: Install OpenBLAS runtime (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev
+        run: sudo apt-get update && sudo apt-get install -y libgfortran5 libquadmath0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
